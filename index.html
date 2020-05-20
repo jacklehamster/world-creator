@@ -1,0 +1,183 @@
+<canvas id="canvas" width="800" height="500">
+</canvas>
+
+
+
+<script>
+
+	const setup = [
+	];
+
+	const numRooms = 50;
+	const numConnection = 30;
+
+	for (let i = 0; i < numConnection; i++) {
+		const firstIndex = Math.floor(Math.random() * numRooms);
+		const secondIndex = (firstIndex + Math.floor(Math.random() * (numRooms - 1))) % numRooms;
+
+		const first = String.fromCharCode("A".charCodeAt(0) + firstIndex);
+		const second = String.fromCharCode("A".charCodeAt(0) + secondIndex);
+
+		setup.push(first + second);
+	}
+
+	let firstRoom = null;
+	const roomMap = {};
+	setup.forEach(([from, to]) => {
+		if (!firstRoom) {
+			firstRoom = from;
+		}
+		if (!roomMap[from]) {
+			roomMap[from] = [];
+		}
+		if (roomMap[from].indexOf(to) < 0) {
+			roomMap[from].push(to);
+		}
+	});
+	console.log(roomMap);
+
+	const rooms = {};
+	const connections = {};
+	const lines = [];
+
+
+//	fillRooms(firstRoom, roomMap, 400, 20, rooms, connections);
+	setup.forEach(([from, to]) => {
+		if (!rooms[from]) {
+			rooms[from] = {
+				id: from,
+				x: (Math.random() - .5) * 800 + 400,
+				y: (Math.random() - .5) * 500 + 250,
+			};
+		}
+
+		if (!rooms[to]) {
+			rooms[to] = {
+				id: to,
+				x: (Math.random() - .5) * 800 + 400,
+				y: (Math.random() - .5) * 500 + 250,
+			};
+		}
+
+		connections[`${from}${to}`] = connections[`${to}${from}`] = {
+			from: rooms[from],
+			to: rooms[to],
+			tension: 0,
+		};
+	});
+
+
+	function dist(a, b) {
+		const dx = a.x - b.x;
+		const dy = a.y - b.y;
+		return Math.sqrt(dx * dx + dy * dy);
+	}
+
+	function repulse(a, b, force) {
+		const diff = force;
+		const factor = 1 + diff, antiFactor = 1 - factor;
+		const dax = a.x * factor + b.x * antiFactor;
+		const dbx = b.x * factor + a.x * antiFactor;
+		const day = a.y * factor + b.y * antiFactor;
+		const dby = b.y * factor + a.y * antiFactor;
+		a.x = dax;
+		a.y = day;
+		b.x = dbx;
+		b.y = dby;
+	}
+
+	function attract(a, b, force) {
+		const diff = -force;
+		const factor = 1 + diff, antiFactor = 1 - factor;
+		const dax = a.x * factor + b.x * antiFactor;
+		const dbx = b.x * factor + a.x * antiFactor;
+		const day = a.y * factor + b.y * antiFactor;
+		const dby = b.y * factor + a.y * antiFactor;
+		a.x = dax;
+		a.y = day;
+		b.x = dbx;
+		b.y = dby;		
+	}
+
+	function limit(room) {
+		if (room.x < 0) {
+			room.x ++;
+		}
+		if (room.x > 800) {
+			room.x --;
+		}
+		if (room.y < 0) {
+			room.y ++;
+		}
+		if (room.y > 500) {
+			room.y --;
+		}
+	}
+
+	//	create lines
+	for (let a in rooms) {
+		for (let b in rooms) {
+			if (connections[`${a}${b}`]) {
+				lines.push({
+					from: rooms[a],
+					to: rooms[b],
+				});
+			}
+		}
+	}		
+
+
+	function loop() {
+		for (let a in rooms) {
+			const roomA = rooms[a];
+			for (let b in rooms) {
+				if (a !== b) {
+					const roomB = rooms[b];
+					if (dist(roomA, roomB) < 30) {
+						repulse(roomA, roomB, .05);						
+					} else if (!connections[`${a}${b}`]) {
+						if (dist(roomA, roomB) < 100) {
+							repulse(roomA, roomB, .01);
+						}
+					} else {
+						if (dist(roomA, roomB) > 30) {
+							attract(roomA, roomB, .01);
+
+							connections[`${a}${b}`].tension =
+							connections[`${b}${a}`].tension = dist(roomA, roomB);
+						}
+					}
+				}
+			}
+			limit(roomA);
+		}
+
+
+		const canvas = document.getElementById("canvas");
+		const ctx = canvas.getContext("2d");
+		ctx.clearRect(0, 0, 800, 500);
+		ctx.font = "20px Georgia";
+		ctx.fillStyle = "#000000";
+
+		for (let r in rooms) {
+			ctx.beginPath();
+			ctx.arc(rooms[r].x, rooms[r].y, 5, 0, 2 * Math.PI);
+			ctx.stroke();
+
+			ctx.fillText(r, rooms[r].x, rooms[r].y);
+		}
+
+		lines.forEach(({from, to}) => {
+			ctx.beginPath();
+			ctx.lineWidth = Math.max(0.1, - connections[`${from.id}${to.id}`].tension / 30 + 5);
+			ctx.moveTo(from.x, from.y);
+			ctx.lineTo(to.x, to.y);
+			ctx.stroke();
+		});
+		requestAnimationFrame(loop);
+	}
+
+	requestAnimationFrame(loop);
+
+
+</script>
