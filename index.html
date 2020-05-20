@@ -59,6 +59,7 @@
 			};
 		}
 
+
 		connections[`${from}${to}`] = connections[`${to}${from}`] = {
 			from: rooms[from],
 			to: rooms[to],
@@ -114,6 +115,17 @@
 		}
 	}
 
+	function fixFirstRoom(room) {
+		if (room.id === firstRoom) {
+			room.x = 400;
+			room.y = 30;
+		} else {
+			if (room.y <= 100) {
+				room.y+= 5;
+			}
+		}
+	}
+
 	//	create lines
 	for (let a in rooms) {
 		for (let b in rooms) {
@@ -126,7 +138,6 @@
 		}
 	}		
 
-
 	function loop() {
 		for (let a in rooms) {
 			const roomA = rooms[a];
@@ -136,11 +147,11 @@
 					if (dist(roomA, roomB) < 30) {
 						repulse(roomA, roomB, .05);						
 					} else if (!connections[`${a}${b}`]) {
-						if (dist(roomA, roomB) < 100) {
+						if (dist(roomA, roomB) < 80) {
 							repulse(roomA, roomB, .01);
 						}
 					} else {
-						if (dist(roomA, roomB) > 30) {
+						if (dist(roomA, roomB) > 50) {
 							attract(roomA, roomB, .01);
 
 							connections[`${a}${b}`].tension =
@@ -150,6 +161,7 @@
 				}
 			}
 			limit(roomA);
+			fixFirstRoom(roomA);
 		}
 
 
@@ -162,6 +174,13 @@
 			ctx.beginPath();
 			ctx.lineWidth = Math.max(0.1, - connections[`${from.id}${to.id}`].tension / 30 + 5);
 			ctx.moveTo(from.x, from.y);
+			const dx = from.x - to.x;
+			const dy = from.y - to.y;
+			if (dx < dy) {
+				ctx.lineTo(from.x, to.y);
+			} else {
+				ctx.lineTo(to.x, from.y);
+			}
 			ctx.lineTo(to.x, to.y);
 			ctx.stroke();
 		});
@@ -169,7 +188,7 @@
 
 		for (let r in rooms) {
 //			if ("ABCDEFGHI".indexOf(r) >= 0) {
-				ctx.fillStyle = "#FFFFFF";
+				ctx.fillStyle = r === firstRoom ? "#FFEEEE" : "#FFFFFF";
 				ctx.beginPath();
 				ctx.arc(rooms[r].x, rooms[r].y, 10, 0, 2 * Math.PI);
 				ctx.stroke();
