@@ -156,16 +156,7 @@
 		const canvas = document.getElementById("canvas");
 		const ctx = canvas.getContext("2d");
 		ctx.clearRect(0, 0, 800, 500);
-		ctx.font = "20px Georgia";
-		ctx.fillStyle = "#000000";
-
-		for (let r in rooms) {
-			ctx.beginPath();
-			ctx.arc(rooms[r].x, rooms[r].y, 5, 0, 2 * Math.PI);
-			ctx.stroke();
-
-			ctx.fillText(r, rooms[r].x, rooms[r].y);
-		}
+		ctx.font = "12px Georgia";
 
 		lines.forEach(({from, to}) => {
 			ctx.beginPath();
@@ -174,6 +165,22 @@
 			ctx.lineTo(to.x, to.y);
 			ctx.stroke();
 		});
+			ctx.lineWidth = 1;
+
+		for (let r in rooms) {
+//			if ("ABCDEFGHI".indexOf(r) >= 0) {
+				ctx.fillStyle = "#FFFFFF";
+				ctx.beginPath();
+				ctx.arc(rooms[r].x, rooms[r].y, 10, 0, 2 * Math.PI);
+				ctx.stroke();
+				ctx.fill();
+
+				ctx.fillStyle = "#000000";
+				ctx.fillText(r, rooms[r].x-5, rooms[r].y+3);
+//			}
+		}
+
+
 		requestAnimationFrame(loop);
 	}
 
