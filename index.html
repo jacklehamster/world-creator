@@ -59,13 +59,23 @@
 			};
 		}
 
-
 		connections[`${from}${to}`] = connections[`${to}${from}`] = {
 			from: rooms[from],
 			to: rooms[to],
 			tension: 0,
 		};
 	});
+
+	for (let r in rooms) {
+		rooms[r].viz = {
+			x: rooms[r].x,
+			y: rooms[r].y,
+		};
+		rooms[r].org = {
+			x: rooms[r].x,
+			y: rooms[r].y,
+		};
+	}
 
 
 	function dist(a, b) {
@@ -115,6 +125,15 @@
 		}
 	}
 
+	function notTooFar(room) {
+		const dx = room.x - room.org.x;
+		const dy = room.y - room.org.y;
+		if (Math.sqrt(dx * dx + dy * dy) > 300) {
+			room.x += (room.org.x - room.x) / 30;
+			room.y += (room.org.y - room.y) / 30;
+		}
+	}
+
 	function fixFirstRoom(room) {
 		if (room.id === firstRoom) {
 			room.x = 400;
@@ -136,7 +155,7 @@
 				});
 			}
 		}
-	}		
+	}	
 
 	function loop() {
 		for (let a in rooms) {
@@ -162,8 +181,13 @@
 			}
 			limit(roomA);
 			fixFirstRoom(roomA);
+			notTooFar(roomA);
 		}
 
+		for (let r in rooms) {
+			rooms[r].viz.x += (rooms[r].x - rooms[r].viz.x) / 20;
+			rooms[r].viz.y += (rooms[r].y - rooms[r].viz.y) / 20;
+		}
 
 		const canvas = document.getElementById("canvas");
 		const ctx = canvas.getContext("2d");
@@ -171,31 +195,55 @@
 		ctx.font = "12px Georgia";
 
 		lines.forEach(({from, to}) => {
-			ctx.beginPath();
-			ctx.lineWidth = Math.max(0.1, - connections[`${from.id}${to.id}`].tension / 30 + 5);
-			ctx.moveTo(from.x, from.y);
-			const dx = from.x - to.x;
-			const dy = from.y - to.y;
-			if (dx < dy) {
-				ctx.lineTo(from.x, to.y);
-			} else {
-				ctx.lineTo(to.x, from.y);
+			if (from.id > to.id) {
+				ctx.beginPath();
+				ctx.lineWidth = Math.max(0.1, - connections[`${from.id}${to.id}`].tension / 30 + 5);
+				let px = from.viz.x, py = from.viz.y;
+				ctx.moveTo(px, py);
+
+				const dx = px - to.viz.x;
+				const dy = py - to.viz.y;
+
+				// if (dx < dy) {
+				// 	if (Math.abs(dy) > 30) {
+				// 		py += Math.sign(dy) * 30;
+				// 		ctx.lineTo(px, py);
+				// 	}
+
+				// 	px = to.viz.x;
+				// 	ctx.lineTo(px, py);
+				// } else {
+				// 	if (Math.abs(dx) > 30) {
+				// 		px += Math.sign(dx) * 30;
+				// 		ctx.lineTo(px, py);
+				// 	}
+
+					py = to.viz.y;
+					ctx.lineTo(px, py);
+				// }
+
+				px = to.viz.x;
+				py = to.viz.y;
+				ctx.lineTo(px, py);
+				ctx.stroke();
 			}
-			ctx.lineTo(to.x, to.y);
-			ctx.stroke();
 		});
-			ctx.lineWidth = 1;
+		ctx.lineWidth = 1;
+		ctx.beginPath();
+		ctx.moveTo(rooms[firstRoom].viz.x, rooms[firstRoom].viz.y);
+		ctx.lineTo(rooms[firstRoom].viz.x, 0);
+		ctx.stroke();
 
 		for (let r in rooms) {
 //			if ("ABCDEFGHI".indexOf(r) >= 0) {
 				ctx.fillStyle = r === firstRoom ? "#FFEEEE" : "#FFFFFF";
 				ctx.beginPath();
-				ctx.arc(rooms[r].x, rooms[r].y, 10, 0, 2 * Math.PI);
+				ctx.arc(rooms[r].viz.x, rooms[r].viz.y, 10, 0, 2 * Math.PI);
 				ctx.stroke();
 				ctx.fill();
 
 				ctx.fillStyle = "#000000";
-				ctx.fillText(r, rooms[r].x-5, rooms[r].y+3);
+				ctx.fillText(r, rooms[r].viz.x-5, rooms[r].viz.y+3);
 //			}
 		}
 
